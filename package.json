@@ -1,0 +1,20 @@
+{
+  "name": "test",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node build.mjs --dev",
+    "build": "node build.mjs",
+    "serve": "node build.mjs; NODE_ENV=production node .build/server.cjs"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "node-file-router": "^0.3.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.9",
+    "esbuild": "^0.19.2",
+    "fast-glob": "^3.3.1",
+    "typescript": "^5.2.2"
+  }
+}
