@@ -1,48 +1,47 @@
 import esbuild from 'esbuild'
 import glob from 'fast-glob'
+import { spawn } from 'node:child_process';
 
-let server
 const routes = glob.sync('./routes/**.{ts,tsx,js,jsx}')
-let dev = process.argv[2] === '--dev'
+const isDev = process.argv[2] === '--dev'
 
 const ctx = await esbuild.context({
-    entryPoints: [
-        'server.ts',
-        ...routes
-    ],
-    outdir: '.build',
-    bundle: true,
-    platform: 'node',
-    outExtension: { '.js': '.cjs' },
-    packages: 'external',
-    plugins: [
-        after(dev)
-    ]
+  entryPoints: [
+    'server.ts',
+    ...routes
+  ],
+  outdir: '.build',
+  bundle: true,
+  platform: 'node',
+  outExtension: { '.js': '.cjs' },
+  packages: 'external',
+  plugins: [
+    after(isDev)
+  ]
 })
 
-
-if (dev) {
-	await ctx.watch()
+if (isDev) {
+  await ctx.watch();
+  console.log('watch mode is active');
 } else {
-	await ctx.rebuild()
-	await ctx.dispose()
+  await ctx.rebuild();
+  await ctx.dispose();
 }
 
+let server;
 
 function after(dev = false) {
-	return {
-		name: 'after',
-		setup: build => {
-			dev && build.onEnd(async result => {
-			    if (server) {
-			    	console.log('———— on build: setupRouter —————')
-			        await server.setupRouter()
-			    } else {
-			    	console.log('———— on initial build: serve —————')
-			        server = await import('./.build/server.cjs')
-			        server.serve({ dev: true })
-			    }
-			})
-		}
-	}
+  return {
+    name: 'after',
+    setup: build => dev && build.onEnd(() => restartServer())
+  }
 }
+
+const restartServer = () => {
+  if (server) {
+    server.kill();
+    console.log('restarting service');
+  }
+
+  server = spawn('node', ['.build/server.cjs'], { stdio: 'inherit' });
+};
